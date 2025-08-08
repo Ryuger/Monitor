@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг хостов</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        canvas { max-width: 100%; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-4">Мониторинг хостов</h1>
+        
+        <!-- Выбор группы -->
+        <div class="mb-4">
+            <label for="group" class="block text-sm font-medium text-gray-700">Выберите группу:</label>
+            <select id="group" onchange="updateGroup()" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                {% for group in groups %}
+                    <option value="{{ group }}" {% if group == selected_group %}selected{% endif %}>{{ group }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if selected_group %}
+        <!-- Вкладки -->
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <a href="#hosts" class="tab-link border-b-2 border-transparent px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" onclick="openTab('hosts')">Список хостов</a>
+                <a href="#history" class="tab-link border-b-2 border-transparent px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" onclick="openTab('history')">История пингов</a>
+                <a href="#dashboard" class="tab-link border-b-2 border-transparent px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" onclick="openTab('dashboard')">Дашборд</a>
+            </nav>
+        </div>
+
+        <!-- Вкладка: Список хостов -->
+        <div id="hosts" class="tab-content mt-4">
+            <h2 class="text-xl font-semibold mb-2">Список хостов в группе '{{ selected_group }}'</h2>
+            {% if hosts %}
+                <table class="min-w-full bg-white border">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 border-b">Адрес</th>
+                            <th class="py-2 px-4 border-b">Описание</th>
+                            <th class="py-2 px-4 border-b">Подгруппа</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for host in hosts %}
+                            <tr>
+                                <td class="py-2 px-4 border-b">{{ host.address }}</td>
+                                <td class="py-2 px-4 border-b">{{ host.description }}</td>
+                                <td class="py-2 px-4 border-b">{{ host.subgroup }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>Список хостов пуст или группа не существует.</p>
+            {% endif %}
+        </div>
+
+        <!-- Вкладка: История пингов -->
+        <div id="history" class="tab-content mt-4">
+            <h2 class="text-xl font-semibold mb-2">История пингов</h2>
+            <div class="mb-4">
+                <label for="host" class="block text-sm font-medium text-gray-700">Выберите хост:</label>
+                <select id="host" onchange="updateHost()" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    {% for host in hosts %}
+                        <option value="{{ host.address }}" {% if host.address == selected_host %}selected{% endif %}>{{ host.address }} ({{ host.description }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="start_time" class="block text-sm font-medium text-gray-700">Начало периода:</label>
+                <input type="datetime-local" id="start_time" value="{{ start_time or '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <label for="end_time" class="block text-sm font-medium text-gray-700 mt-2">Конец периода:</label>
+                <input type="datetime-local" id="end_time" value="{{ end_time or '' }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <label for="status" class="block text-sm font-medium text-gray-700 mt-2">Статус:</label>
+                <select id="status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <option value="">Все</option>
+                    <option value="Доступен" {% if status == 'Доступен' %}selected{% endif %}>Доступен</option>
+                    <option value="Недоступен" {% if status == 'Недоступен' %}selected{% endif %}>Недоступен</option>
+                </select>
+                <button onclick="filterHistory()" class="mt-2 bg-blue-500 text-white py-2 px-4 rounded">Фильтровать</button>
+            </div>
+            {% if ping_history %}
+                <table class="min-w-full bg-white border">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 border-b">Время</th>
+                            <th class="py-2 px-4 border-b">Статус</th>
+                            <th class="py-2 px-4 border-b">Задержка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in ping_history %}
+                            <tr>
+                                <td class="py-2 px-4 border-b">{{ entry.timestamp }}</td>
+                                <td class="py-2 px-4 border-b">{{ entry.status }}</td>
+                                <td class="py-2 px-4 border-b">{{ entry.latency }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>История пингов пуста или хост не выбран.</p>
+            {% endif %}
+        </div>
+
+        <!-- Вкладка: Дашборд -->
+        <div id="dashboard" class="tab-content mt-4">
+            <h2 class="text-xl font-semibold mb-2">Дашборд для группы '{{ selected_group }}'</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-lg font-medium">Процент доступности хостов</h3>
+                    <canvas id="availabilityChart"></canvas>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium">Средняя задержка (сек)</h3>
+                    <canvas id="latencyChart"></canvas>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium">Недоступные хосты по времени</h3>
+                    <canvas id="downChart"></canvas>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        // Управление вкладками
+        function openTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('border-blue-500', 'text-blue-700'));
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`a[href="#${tabName}"]`).classList.add('border-blue-500', 'text-blue-700');
+        }
+
+        // Обновление группы
+        function updateGroup() {
+            const group = document.getElementById('group').value;
+            window.location.href = `/?group=${encodeURIComponent(group)}`;
+        }
+
+        // Обновление хоста
+        function updateHost() {
+            const group = document.getElementById('group').value;
+            const host = document.getElementById('host').value;
+            window.location.href = `/?group=${encodeURIComponent(group)}&host=${encodeURIComponent(host)}`;
+        }
+
+        // Фильтрация истории пингов
+        function filterHistory() {
+            const group = document.getElementById('group').value;
+            const host = document.getElementById('host').value;
+            const start_time = document.getElementById('start_time').value;
+            const end_time = document.getElementById('end_time').value;
+            const status = document.getElementById('status').value;
+            let url = `/?group=${encodeURIComponent(group)}&host=${encodeURIComponent(host)}`;
+            if (start_time) url += `&start_time=${encodeURIComponent(start_time)}`;
+            if (end_time) url += `&end_time=${encodeURIComponent(end_time)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            window.location.href = url;
+        }
+
+        // Инициализация вкладок
+        document.addEventListener('DOMContentLoaded', () => {
+            openTab('hosts'); // Открыть вкладку "Список хостов" по умолчанию
+            {% if dashboard_data %}
+                // График доступности
+                new Chart(document.getElementById('availabilityChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: {{ dashboard_data.availability | map(attribute='address') | list | tojson }},
+                        datasets: [{
+                            label: 'Доступность (%)',
+                            data: {{ dashboard_data.availability | map(attribute='availability') | list | tojson }},
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: { scales: { y: { beginAtZero: true, max: 100 } } }
+                });
+
+                // График средней задержки
+                new Chart(document.getElementById('latencyChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: {{ dashboard_data.latency | map(attribute='address') | list | tojson }},
+                        datasets: [{
+                            label: 'Средняя задержка (сек)',
+                            data: {{ dashboard_data.latency | map(attribute='avg_latency') | list | tojson }},
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: { scales: { y: { beginAtZero: true } } }
+                });
+
+                // График недоступных хостов
+                new Chart(document.getElementById('downChart'), {
+                    type: 'line',
+                    data: {
+                        labels: {{ dashboard_data.down | map(attribute='timestamp') | list | tojson }},
+                        datasets: [{
+                            label: 'Недоступные хосты',
+                            data: {{ dashboard_data.down | map(attribute='down_count') | list | tojson }},
+                            fill: false,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: { scales: { y: { beginAtZero: true } } }
+                });
+            {% endif %}
+        });
+    </script>
+</body>
+</html>

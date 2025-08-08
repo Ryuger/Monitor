@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Вход в систему - Мониторинг хостов{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="dashboard-card text-center">
+            <h1 class="h3 mb-4">
+                <i class="fas fa-network-wired fa-2x text-primary mb-3"></i>
+                <br>
+                Система мониторинга хостов
+            </h1>
+            
+            <p class="text-muted mb-4">
+                Войдите в систему для доступа к панели мониторинга
+            </p>
+            
+            <a href="{{ url_for('replit_auth.login') }}" class="btn btn-primary btn-lg w-100">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                Войти
+            </a>
+            
+            <hr class="my-4">
+            
+            <div class="row text-center">
+                <div class="col-4">
+                    <div class="stat-card border-0">
+                        <div class="stat-number text-primary">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="stat-label">Безопасность</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="stat-card border-0">
+                        <div class="stat-number text-success">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-label">Мониторинг</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="stat-card border-0">
+                        <div class="stat-number text-info">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-label">24/7</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <small class="text-muted">
+                <i class="fas fa-lock me-1"></i>
+                Защищенное соединение через Replit Auth
+            </small>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="dashboard-card text-center">
+                    <i class="fas fa-server fa-2x text-primary mb-3"></i>
+                    <h5>Мониторинг хостов</h5>
+                    <p class="text-muted small">
+                        Отслеживание доступности и производительности серверов в реальном времени
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="dashboard-card text-center">
+                    <i class="fas fa-chart-bar fa-2x text-success mb-3"></i>
+                    <h5>Аналитика</h5>
+                    <p class="text-muted small">
+                        Подробная статистика доступности и времени отклика сервисов
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="dashboard-card text-center">
+                    <i class="fas fa-bell fa-2x text-warning mb-3"></i>
+                    <h5>Уведомления</h5>
+                    <p class="text-muted small">
+                        Мгновенные оповещения о проблемах с доступностью хостов
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
